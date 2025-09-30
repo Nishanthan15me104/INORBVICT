@@ -1,93 +1,106 @@
-Modular Project Intake Chatbot
-This project implements a conversational flow to gather project requirements (Name, Project Type, Duration, and Budget). It uses a modular, two-part architecture:
+# 🧩 Modular Project Intake Chatbot
 
-Backend (FastAPI): Handles session management, flow progression, and strict Pydantic validation of user inputs at each step.
+This project implements a conversational flow to gather **project requirements**:
 
-Frontend (Streamlit): Provides a conversational user interface (UI) that communicates with the FastAPI backend via HTTP requests.
+* Name
+* Project Type
+* Duration
+* Budget
 
-🚀 Project Structure & Core Logic
-The application is structured logically by layer:
+It uses a **modular, two-part architecture**:
 
-Layer
+* **Backend (FastAPI):** Handles session management, flow progression, and strict Pydantic validation of user inputs at each step.
+* **Frontend (Streamlit):** Provides a conversational UI that communicates with the FastAPI backend via HTTP requests.
 
-File Path
+---
 
-Purpose
+## 🚀 Project Structure & Core Logic
 
-Domain
+The application is structured logically by layers:
 
-chatbotapi/src/chat/domain/flow_definition.py
+| **Layer**          | **File Path**                                   | **Purpose**                                                                         |
+| ------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **Domain**         | `chatbotapi/src/chat/domain/flow_definition.py` | Defines conversation steps (`CHAT_FLOW`), `ProjectData`, and Pydantic rules         |
+| **Infrastructure** | `chatbotapi/src/chat/infrastructure/api.py`     | FastAPI app, endpoints (`/flow/submit`, `/flow/reset`), session storage, validation |
+| **UI Client**      | `chatbot_ui/src/streamlit.py`                   | Streamlit UI for chat history rendering and API communication                       |
 
-Defines the conversation steps (CHAT_FLOW) and the required data structure (ProjectData) along with all Pydantic validation rules.
+---
 
-Infrastructure
+## 💻 Getting Started
 
-chatbotapi/src/chat/infrastructure/api.py
+### Prerequisites
 
-Contains the FastAPI application, including endpoints (/flow/submit, /flow/reset), in-memory session storage, and the critical logic for single-step Pydantic validation.
+* Python **3.8+**
 
-UI Client
+### 1. Setup Virtual Environment
 
-chatbot_ui/src/streamlit.py
+It’s highly recommended to use a virtual environment for dependencies:
 
-Contains the Streamlit user interface code for rendering the chat history and managing API communication.
-
-💻 Getting Started
-Follow these steps to set up and run the application locally.
-
-Prerequisites
-You need Python 3.8+ installed on your system.
-
-1. Setup Virtual Environment
-It's highly recommended to use a virtual environment to manage dependencies.
-
+```bash
 # Create a virtual environment
 python -m venv .venv
 
-# Activate the virtual environment (Windows)
+# Activate the virtual environment
+# Windows
 .\.venv\Scripts\activate
 
-# Activate the virtual environment (macOS/Linux)
+# macOS/Linux
+source .venv/bin/activate
+```
+
+### 2. Install Dependencies
+
+With your virtual environment active, install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## ▶️ Running the Application
+
+The app requires **two terminals** (one for the backend, one for the frontend).
+
+### Terminal 1: Start FastAPI Backend
+
+```bash
+uvicorn chatbotapi.src.chat.infrastructure.api:app --reload
+```
+
+Wait for: `Application startup complete.`
+
+### Terminal 2: Start Streamlit Frontend
+
+```bash
+# Activate virtual environment (if not already active)
+# Windows
+.\.venv\Scripts\activate
+
+# macOS/Linux
 source .venv/bin/activate
 
-2. Install Dependencies
-With your virtual environment active, install all required packages using the requirements.txt file:
+# Run Streamlit
+streamlit run chatbot_ui/src/streamlit.py
+```
 
-# Install packages listed in the requirements.txt file
-pip install -r requirements.txt
+This opens the app in your browser: [http://localhost:8501](http://localhost:8501)
 
-▶️ Running the Application
-The application requires two separate terminals to run the API and the UI concurrently.
+---
 
-Terminal 1: Start the FastAPI Backend
-Navigate to your project root and run the FastAPI server using uvicorn. The --reload flag enables live code reloading during development.
+## 🛠️ Debugging Validation Errors
 
-# Ensure you are in the project root directory
-(venv) $ uvicorn chatbotapi.src.chat.infrastructure.api:app --reload
+If you see an **Input Error** in the Streamlit UI, it means the input failed **Pydantic validation**.
 
-Wait until you see the message: Application startup complete.
+### Steps to Debug
 
-Terminal 2: Start the Streamlit Frontend
-Open a new terminal window, activate the same virtual environment, and run the Streamlit application.
+1. **Check FastAPI Logs:**
+   In the terminal running `uvicorn`, Pydantic will print detailed error messages (e.g., `ValueError` from `@field_validator`).
 
-# Activate the virtual environment (if not already active)
-(venv) $ .\.venv\Scripts\activate # Windows
-# or: source .venv/bin/activate # macOS/Linux
+2. **Review Input Rules:**
 
-# Run the Streamlit client
-(venv) $ streamlit run chatbot_ui/src/streamlit.py
+   * **Name:** Minimum **3 characters**
+   * **Project Type:** Must be at least **two words**
+   * **Duration / Budget:** Must be **positive integers**
 
-This will automatically open the web application in your default browser, typically at http://localhost:8501.
-
-🛠️ Debugging Validation Errors
-If you encounter an Input Error message in the Streamlit UI, it means the input failed Pydantic validation:
-
-Check the FastAPI Terminal: Look at the logs in the terminal running uvicorn. Pydantic usually prints detailed error messages (like ValueError messages from your @field_validator methods) that explain exactly why the input was rejected.
-
-Review Input Rules:
-
-Name: Must be at least 3 characters long.
-
-Project Type: Must be described in at least two words.
-
-Duration/Budget: Must be positive integers.
+---
