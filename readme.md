@@ -7,6 +7,8 @@ This project implements a conversational application with a **two-part modular a
    * Structured conversation to gather project requirements (**Name, Type, Duration, Budget**)
    * Strict **Pydantic validation**
 
+   **note: data for rag is web scraped and saved in FAISS
+
 2. **RAG (Retrieval-Augmented Generation) Chatbot**
 
    * Open-ended **Q&A system** on *Jordan Peterson content*
