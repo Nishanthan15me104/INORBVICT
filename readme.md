@@ -1,56 +1,93 @@
-# 🧩 Modular Project Intake Chatbot
+# 🤖 Hybrid Modular Chatbot: Flow & RAG
 
-This project implements a conversational flow to gather **project requirements**:
+This project implements a conversational application with a **two-part modular architecture** offering two distinct operational modes:
 
-* Name
-* Project Type
-* Duration
-* Budget
+1. **Flow-based Project Planner**
 
-It uses a **modular, two-part architecture**:
+   * Structured conversation to gather project requirements (**Name, Type, Duration, Budget**)
+   * Strict **Pydantic validation**
 
-* **Backend (FastAPI):** Handles session management, flow progression, and strict Pydantic validation of user inputs at each step.
-* **Frontend (Streamlit):** Provides a conversational UI that communicates with the FastAPI backend via HTTP requests.
+2. **RAG (Retrieval-Augmented Generation) Chatbot**
+
+   * Open-ended **Q&A system** on *Jordan Peterson content*
+   * Powered by **Groq API** and LLM
+
+The **user selects the desired mode** at the start of the conversation.
 
 ---
 
-## 🚀 Project Structure & Core Logic
+## 🚀 Project Architecture & Core Logic
 
-The application is structured logically by layers:
+The application uses **FastAPI (backend)** and **Streamlit (frontend)**.
+The **infrastructure layer** manages **mode switching** and routes requests to either:
 
-| **Layer**          | **File Path**                                   | **Purpose**                                                                         |
-| ------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------- |
-| **Domain**         | `chatbotapi/src/chat/domain/flow_definition.py` | Defines conversation steps (`CHAT_FLOW`), `ProjectData`, and Pydantic rules         |
-| **Infrastructure** | `chatbotapi/src/chat/infrastructure/api.py`     | FastAPI app, endpoints (`/flow/submit`, `/flow/reset`), session storage, validation |
-| **UI Client**      | `chatbot_ui/src/streamlit.py`                   | Streamlit UI for chat history rendering and API communication                       |
+* **Flow logic** (structured)
+* **RAG logic** (open-ended)
+
+### 📂 File Structure
+
+```bash
+chatbot_project/
+│
+├── chatbotapi/                         # Backend (FastAPI)
+│   └── src/
+│       └── chat/
+│           ├── domain/
+│           │   └── flow_definition.py        # Defines flow steps, ProjectData, Pydantic rules
+│           │
+│           ├── application/
+│           │   └── convo/
+│           │       └── response_generation.py # HybridGenerator for RAG/LLM
+│           │
+│           └── infrastructure/
+│               └── api.py                     # FastAPI app, endpoints, session management, mode switching
+│
+├── chatbot_ui/                         # Frontend (Streamlit)
+│   └── src/
+│       └── streamlit.py                 # UI client, chat history, API calls, mode tracking
+│
+├── .env                                # Environment variables (Groq API Key required)
+├── requirements.txt                    # Python dependencies
+└── README.md                           # Project documentation (this file)
+```
 
 ---
 
 ## 💻 Getting Started
 
-### Prerequisites
+### ✅ Prerequisites
 
 * Python **3.8+**
+* **Groq API Key** (required for RAG mode)
 
-### 1. Setup Virtual Environment
+---
 
-It’s highly recommended to use a virtual environment for dependencies:
+### 1. Setup Environment Variables
+
+Create a `.env` file in the project root:
+
+```ini
+GROQ_API_KEY="YOUR_GROQ_API_KEY_HERE"
+```
+
+---
+
+### 2. Setup Virtual Environment
 
 ```bash
-# Create a virtual environment
+# Create venv
 python -m venv .venv
 
-# Activate the virtual environment
+# Activate venv
 # Windows
 .\.venv\Scripts\activate
-
 # macOS/Linux
 source .venv/bin/activate
 ```
 
-### 2. Install Dependencies
+---
 
-With your virtual environment active, install dependencies:
+### 3. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -60,7 +97,7 @@ pip install -r requirements.txt
 
 ## ▶️ Running the Application
 
-The app requires **two terminals** (one for the backend, one for the frontend).
+Use **two terminals** (backend + frontend).
 
 ### Terminal 1: Start FastAPI Backend
 
@@ -68,39 +105,78 @@ The app requires **two terminals** (one for the backend, one for the frontend).
 uvicorn chatbotapi.src.chat.infrastructure.api:app --reload
 ```
 
-Wait for: `Application startup complete.`
+Wait for:
+
+```
+Application startup complete.
+```
+
+---
 
 ### Terminal 2: Start Streamlit Frontend
 
 ```bash
-# Activate virtual environment (if not already active)
-# Windows
-.\.venv\Scripts\activate
+# Activate venv if not already
+.\.venv\Scripts\activate   # Windows
+source .venv/bin/activate  # macOS/Linux
 
-# macOS/Linux
-source .venv/bin/activate
-
-# Run Streamlit
+# Run UI
 streamlit run chatbot_ui/src/streamlit.py
 ```
 
-This opens the app in your browser: [http://localhost:8501](http://localhost:8501)
+Opens at 👉 [http://localhost:8501](http://localhost:8501)
 
 ---
 
-## 🛠️ Debugging Validation Errors
+## 🛠️ Operational Modes & Debugging
 
-If you see an **Input Error** in the Streamlit UI, it means the input failed **Pydantic validation**.
+### 1. Initial Mode Selection
 
-### Steps to Debug
+The bot first asks:
 
-1. **Check FastAPI Logs:**
-   In the terminal running `uvicorn`, Pydantic will print detailed error messages (e.g., `ValueError` from `@field_validator`).
+```
+Would you like to use the Flow-based Project Planner or the Jordan Peterson RAG Chatbot?
+(Respond with 'Flow' or 'RAG')
+```
 
-2. **Review Input Rules:**
+---
 
-   * **Name:** Minimum **3 characters**
-   * **Project Type:** Must be at least **two words**
-   * **Duration / Budget:** Must be **positive integers**
+### 2. Flow-based Project Planner (Mode: `flow`)
+
+* **Activation:** Respond with `Flow`
+* **Purpose:** Collect structured project details
+* **Validation (Pydantic):**
+
+  * Name: min **3 characters**
+  * Project Type: **≥ 2 words**
+  * Duration / Budget: **positive integers**
+* **Debugging:** Input errors → check FastAPI logs in Terminal 1
+
+---
+
+### 3. RAG Chatbot (Mode: `rag`)
+
+* **Activation:** Respond with `RAG`
+* **Purpose:** Open-ended **Jordan Peterson Q&A**
+* **Behavior:** Remains in `rag` mode until reset
+* **Debugging:**
+
+  * If LLM fails → check `.env` and ensure `GROQ_API_KEY` is valid
+  * Verify internet connection
+
+---
+
+## 🔄 Resetting the Session
+
+To switch modes or restart:
+
+* Click **"Start New Flow"** (appears after Flow completion), OR
+* Call API reset endpoint:
+
+```bash
+POST http://localhost:8000/flow/reset?session_id=<your_session_id>
+```
+
+This clears the in-memory session state.
 
 ---

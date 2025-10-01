@@ -16,6 +16,8 @@ def initialize_session_state():
         st.session_state.is_complete = False
     if 'summary_data' not in st.session_state:
         st.session_state.summary_data = None
+    if 'mode' not in st.session_state: # <-- ADDED for tracking mode
+        st.session_state.mode = 'initial'
         
     # Get the initial bot message if history is empty
     if not st.session_state.history:
@@ -26,8 +28,8 @@ def initialize_session_state():
 def make_api_call(user_input: str, initial_call: bool = False):
     """Makes an HTTP POST request to FastAPI and updates Streamlit state."""
     
-    # Do not proceed if flow is complete, unless it's the initial call (which should check status)
-    if st.session_state.is_complete and not initial_call:
+    # Do not proceed if flow is complete AND we are in flow mode, unless it's the initial call
+    if st.session_state.is_complete and st.session_state.mode == 'flow' and not initial_call:
         return
     
     payload = {
@@ -65,16 +67,17 @@ def make_api_call(user_input: str, initial_call: bool = False):
         # 2. Update State on Success
         bot_message = api_response.get("bot_message", "An unexpected error occurred.")
         st.session_state.is_complete = api_response.get("is_complete", False)
+        st.session_state.mode = api_response.get("mode", "initial") # <-- ADDED: Update mode
         
         st.session_state.history.append({"role": "assistant", "content": bot_message})
         
-        if st.session_state.is_complete:
+        if st.session_state.is_complete and st.session_state.mode == 'flow':
             st.session_state.summary_data = api_response.get("data", {})
         
         # Only rerun if it was a user-triggered input OR the initial call successfully added the first bot message
         if user_input or initial_call:
-             st.rerun() # <-- Updated to st.rerun()
-        
+            st.rerun() # <-- Updated to st.rerun()
+            
     except requests.exceptions.ConnectionError:
         # CRITICAL FIX: Removed st.stop() to allow the error message to render
         st.error(f"🚨 Connection Error: Ensure the FastAPI server is running at {API_BASE_URL}")
@@ -94,12 +97,13 @@ def reset_flow_state():
     st.session_state.history = []
     st.session_state.is_complete = False
     st.session_state.summary_data = None
+    st.session_state.mode = 'initial' # <-- ADDED: Reset mode
     
     initialize_session_state() 
     st.rerun() # <-- Updated to st.rerun()
     
 def display_flow_summary():
-    """Renders the final project summary card."""
+    """Renders the final project summary card, only called for Flow mode."""
     answers = st.session_state.summary_data
     
     st.success("🎉 Flow Complete! Summary Generated 🎉")
@@ -140,16 +144,20 @@ def main_app():
             st.markdown(message["content"])
 
     # Handle completion or continue
-    if st.session_state.is_complete:
+    # Only show the summary if we are in FLOW mode AND the flow is complete
+    is_flow_complete = st.session_state.is_complete and st.session_state.mode == 'flow'
+    
+    if is_flow_complete:
         display_flow_summary()
         placeholder = "Flow complete! Click 'Start New Flow' to begin again."
     else:
+        # RAG mode is continuous, Flow mode requires input, Initial mode requires selection
         placeholder = "Type your response..."
         
     # Collect user input
     prompt = st.chat_input(
         placeholder=placeholder, 
-        disabled=st.session_state.is_complete
+        disabled=is_flow_complete # Only disable if the structured flow is complete
     )
     
     if prompt:
