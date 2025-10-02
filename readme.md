@@ -26,50 +26,54 @@ The **infrastructure layer** manages **mode switching** and routes requests to e
 * **Flow logic** (structured)
 * **RAG logic** (open-ended)
 
+
 ### 📂 File Structure
 
 ```bash
-chatbot_project/
+assign_chatbot/
 │
-├── chatbotapi/                         # Backend (FastAPI)
+├── .env
+├── .gitignore
+├── .ipynb
+├── readme.md
+└── requirements.txt
+│
+├── chatbotapi/
+│   ├── setup_rag.py
+│   ├── test_rag_file.py
 │   └── src/
 │       └── chat/
-│           ├── domain/
-│           │   └── flow_definition.py        # Defines flow steps, ProjectData, Pydantic rules
+│           ├── config.py
 │           │
 │           ├── application/
-│           │   └── convo/
-│           │       └── response_generation.py # HybridGenerator for RAG/LLM
+│           │   ├── flow_manager.py
+│           │   ├── long_term_memory_creation.py
+│           │   │
+│           │   ├── convo/
+│           │   │   └── response_generation.py
+│           │   │
+│           │   ├── data/
+│           │   │   ├── duplicate_documents.py
+│           │   │   └── extract.py
+│           │   │
+│           │   └── rag/
+│           │       ├── embeddings.py
+│           │       ├── retrievers.py
+│           │       └── splitters.py
+│           │
+│           ├── domain/
+│           │   └── flow_definition.py
 │           │
 │           └── infrastructure/
-│               └── api.py                     # FastAPI app, endpoints, session management, mode switching
+│               └── api.py       # FastAPI app, endpoints, and session management.
 │
-├── chatbot_ui/                         # Frontend (Streamlit)
+├── chatbot_ui/                   # Frontend (Streamlit)
 │   └── src/
-│       └── streamlit.py                 # UI client, chat history, API calls, mode tracking
+│       └── streamlit.py          # The UI client, chat history, and API caller.
 │
-├── .env                                # Environment variables (Groq API Key required)
-├── requirements.txt                    # Python dependencies
-└── README.md                           # Project documentation (this file)
-```
-
----
-
-## 💻 Getting Started
-
-### ✅ Prerequisites
-
-* Python **3.8+**
-* **Groq API Key** (required for RAG mode)
-
----
-
-### 1. Setup Environment Variables
-
-Create a `.env` file in the project root:
-
-```ini
-GROQ_API_KEY="YOUR_GROQ_API_KEY_HERE"
+└── testing/
+    ├── .env
+    └── test_api.py
 ```
 
 ---
